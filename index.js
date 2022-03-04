@@ -1,5 +1,7 @@
 const express = require('express');
 const { MongoClient, Collection } = require('mongodb');
+const ObjectId = require('mongodb').ObjectId;
+
 
 
 const cors = require('cors');
@@ -35,7 +37,6 @@ async function run() {
         const deliverymansCollection = database.collection("deliverymans");
         const servicesCollection = database.collection("services");
         const ordersCollection = database.collection("orders");
-        const reviewsCollection = database.collection("reviews");
 
         //-------------------------- Deliveryman API ------------------------------//
 
@@ -101,32 +102,35 @@ async function run() {
         app.post('/orders', async (req, res) => {
             const order = req.body;
             console.log(order);
-
             const result = await ordersCollection.insertOne(order);
             console.log(result);
             res.json(result)
         });
 
-
-
-        //-------------------------- Review API ------------------------------//
-
-        // GET API
-        app.get('/reviews', async (req, res) => {
-            const cursor = reviewsCollection.find({});
-            const allReviews = await cursor.toArray();
-            res.send(allReviews);
+        // DELETE API 
+        app.delete("/orders/:id", async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: ObjectId(id) };
+            const result = await ordersCollection.deleteOne(query);
+            res.json(result);
         });
 
-
-        //POST API
-        app.post('/reviews', async (req, res) => {
-            const review = req.body;
-            console.log(review);
-            const result = await reviewsCollection.insertOne(review);
-            console.log(result);
+        //UPDATE API 
+        app.put('/orders/:id', async (req, res) => {
+            const id = req.params.id;
+            const updatingOrder = req.body;
+            const filter = { _id: ObjectId(id) };
+            const options = { upsert: true };
+            const updatedField = {
+                $set: {
+                    status: updatingOrder.status
+                },
+            };
+            const result = await ordersCollection.updateOne(filter, updatedField, options)
+            console.log('the order status is updated', id)
             res.json(result)
-        });
+        })
+
 
 
 
